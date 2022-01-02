@@ -1,38 +1,69 @@
 package dev.floffah.plugin.fancynpcutils;
 
-import dev.floffah.plugin.fancynpcutils.boundaries.FollowBoundary;
-import dev.floffah.plugin.fancynpcutils.config.Config;
+import dev.floffah.plugin.fancynpcutils.behaviours.FollowBoundaryBehaviour;
+import dev.floffah.plugin.fancynpcutils.behaviours.RunningBehaviour;
+import dev.floffah.plugin.fancynpcutils.config.behaviour.ConfigBehaviour;
+import dev.floffah.plugin.fancynpcutils.config.behaviour.FollowBoundaryConfigBehaviour;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Manager {
     public final FancyNPCUtils plugin;
 
-    public List<FollowBoundary> runningBounaries = new ArrayList<>();
+    public List<RunningBehaviour> runningBoundaries = new ArrayList<>();
 
     public Manager(FancyNPCUtils plugin) {
         this.plugin = plugin;
     }
 
+    public void reloadAll() throws IOException {
+        this.unloadAll();
+        this.plugin.config.readConfig();
+        this.loadAll();
+    }
+
     public void loadAll() {
-        for (Config.NPCFollowBoundary configBoundary : this.plugin.config.config.boundaryFollows) {
-            this.load(configBoundary);
+        for (ConfigBehaviour configBehaviour : this.plugin.config.config.behaviours) {
+            this.load(configBehaviour);
         }
     }
 
-    public void load(Config.NPCFollowBoundary configBoundary) {
-        this.runningBounaries.add(new FollowBoundary(this, configBoundary));
+    public void load(ConfigBehaviour configBehaviour) {
+        RunningBehaviour runningBehaviour = this.associateRunnableBehaviour(configBehaviour);
+
+        runningBehaviour.start();
+        runningBehaviour.startChildren();
+
+        this.runningBoundaries.add(runningBehaviour);
+    }
+
+    public RunningBehaviour associateRunnableBehaviour(ConfigBehaviour configBehaviour) {
+        RunningBehaviour runningBehaviour = null;
+        if (configBehaviour instanceof FollowBoundaryConfigBehaviour followBoundaryConfigBehaviour) {
+            runningBehaviour = new FollowBoundaryBehaviour(this, followBoundaryConfigBehaviour);
+        }
+        if (runningBehaviour != null && configBehaviour.addons.size() > 0) {
+            for (ConfigBehaviour childBehaviour : configBehaviour.addons) {
+                runningBehaviour.children.add(this.associateRunnableBehaviour(childBehaviour));
+            }
+        }
+        return runningBehaviour;
     }
 
     public void unloadAll() {
-        for (FollowBoundary boundary: this.runningBounaries) {
+        for (RunningBehaviour boundary : this.runningBoundaries) {
             this.unload(boundary);
         }
     }
 
-    public void unload(FollowBoundary boundary) {
+    public void unload(RunningBehaviour boundary) {
+        boundary.stopChildren();
         boundary.stop();
-        this.runningBounaries.remove(boundary);
+        for (RunningBehaviour child : boundary.children) {
+            this.unload(child);
+        }
+        this.runningBoundaries.remove(boundary);
     }
 }

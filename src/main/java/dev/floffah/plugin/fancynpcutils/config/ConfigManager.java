@@ -1,7 +1,9 @@
 package dev.floffah.plugin.fancynpcutils.config;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import dev.floffah.plugin.fancynpcutils.FancyNPCUtils;
 
 import java.io.File;
@@ -10,8 +12,8 @@ import java.nio.file.Path;
 import java.util.logging.Level;
 
 public class ConfigManager {
-    public Config config;
     private final FancyNPCUtils plugin;
+    public Config config;
     private File configFile;
 
     private ObjectMapper om;
@@ -30,7 +32,17 @@ public class ConfigManager {
 
     public void initConfig() throws IOException {
         this.configFile = new File(Path.of(this.plugin.getDataFolder().getPath(), "config.yml").toUri());
-        this.om = new ObjectMapper(new YAMLFactory());
+
+        YAMLFactory yf = new YAMLFactory();
+//        yf.disable(YAMLGenerator.Feature.USE_NATIVE_TYPE_ID);
+
+        this.om = new ObjectMapper(yf);
+
+//        PolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator.builder()
+//                .allowIfSubType("java.util.ArrayList")
+//                .allowIfSubType("dev.floffah.plugin.fancynpcutils.config")
+//                .build();
+//        this.om.activateDefaultTyping(ptv, ObjectMapper.DefaultTyping.NON_FINAL);
 
         if (!this.plugin.getDataFolder().exists()) this.plugin.getDataFolder().mkdirs();
         if (!this.configFile.exists()) {

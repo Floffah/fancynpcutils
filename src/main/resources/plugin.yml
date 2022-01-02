@@ -6,3 +6,19 @@ authors: [ Floffah ]
 description: Fancy utilities for citizens
 depend:
   - Citizens
+commands:
+  fnpc:
+    description: Main command for interacting with FancyNPCUtils
+    aliases: [fancynpcutils, fnu]
+permissions:
+  fnpc.*:
+    description: Get full permission to use anything in FancyNPCUtils
+    default: false
+    children:
+      fnpc.commands.*:
+        description: Get access to all commands in FancyNPCUtils
+        default: false
+        children:
+          fnpc.commands.fnpc:
+            description: Get access to the /fnpc command in FancyNPCUtils
+            default: false
